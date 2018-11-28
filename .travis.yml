@@ -1,0 +1,9 @@
+notifications:
+  email: false
+language: Ruby
+branches:
+  only:
+    - master
+script:
+  - bundle install
+  - bundle exec rake test
