@@ -1,12 +1,12 @@
-ruby_olm: Olm for Ruby
-======================
+ruby_olm
+========
 
 A Ruby wrapper for the [olm](https://git.matrix.org/git/olm/) 
 double ratchet implementation from [matrix](https://matrix.org/blog/home/).
 
 This wrapper provides classes and methods that line up with
 the [olm](ext/ruby_olm/ext_lib_olm/olm/include/olm/olm.h) interface, as
-well as a set of helpers and shorter aliases.
+well as a set of helpers and short aliases.
 
 Very much a work in progress.
 
@@ -15,16 +15,11 @@ Very much a work in progress.
 
 ## Installation
 
-The gem packages and builds olm source for your convenience. This means:
-
-- Your system needs to be capable of building native extensions
-- You don't need to install olm separately
-
-Using bundle: 
+Add 'ruby_olm' to your Gemfile and then:
 
 ~~~ console
 bundle install
-~~~ 
+~~~
 
 Then require as:
 
