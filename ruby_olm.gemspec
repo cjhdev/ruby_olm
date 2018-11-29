@@ -13,8 +13,8 @@ Gem::Specification.new do |s|
     s.extensions = ["ext/ruby_olm/ext_lib_olm/extconf.rb"]
     s.license = 'Apache-2.0'
     s.test_files = Dir.glob("test/**/*.rb")
-    s.add_development_dependency 'rake-compiler', '~> 0'
-    s.add_development_dependency 'rake', '~> 0'
-    s.add_development_dependency 'minitest', '~> 0'
+    s.add_development_dependency 'rake-compiler'
+    s.add_development_dependency 'rake'
+    s.add_development_dependency 'minitest'
     s.required_ruby_version = '>= 2.0'
 end
