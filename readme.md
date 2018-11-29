@@ -12,20 +12,30 @@ Very much a work in progress.
 
 [![Build Status](https://travis-ci.org/cjhdev/ruby_olm.svg?branch=master)](https://travis-ci.org/cjhdev/ruby_olm)
 
-
 ## Installation
 
-Add 'ruby_olm' to your Gemfile and then:
+The gem name is 'ruby_olm'. The target
+needs to be able to build native extensions.
 
-~~~ console
-bundle install
-~~~
-
-Then require as:
+Once installed, require as:
 
 ~~~ ruby
 require 'ruby_olm'
 ~~~
+
+If using locally (i.e. you check out this repository) you may
+need to manually compile and clean the extensions like this:
+
+~~~ console
+bundle exec rake compile
+bundle exec rake clean
+~~~
+
+## Characteristics
+
+- Interfaces are not thread safe
+- Olm always encodes binary as base64
+- Account is unlikely to scale for a large number of one-time-keys
 
 ## Example
 
@@ -40,7 +50,7 @@ alice = Account.new
 bob = Account.new
 
 # Alice wants to send a message to Bob
-alice_msg = "hello world"
+alice_msg = "Hi Bob"
 
 # Bob generates a one-time-key
 bob.gen_otk
@@ -62,6 +72,16 @@ bob.update_otk(bob_session)
 
 # Bob can decrypt Alice's message
 bob_msg = bob_session.decrypt(encrypted)
+
+# ...
+
+# Bob can send a message back to Alice
+bob_msg = "Hi Alice"
+
+encrypted = bob_sesion.encrypt(bob_msg)
+
+alice_msg = alice_sesion.decrypt(encrypted)
+
 ~~~
 
 Account and Session instances can be serialised and deserialised 
@@ -78,9 +98,6 @@ Account.from_pickle(alice_saved_account)
 Session.from_pickle(alice_saved_session)
 ~~~
 
-Finally, be aware that olm produces and consumes base64 encoded byte strings
-instead of raw byte strings.
-
 ## Running Tests
 
 ~~~ console
@@ -91,7 +108,7 @@ bundle exec rake test
 
 - documentation
 - more testing
-- add support for megolm and utility functions
+- add support for megolm
 - replace built-in olm crypto with Ruby openssl
 
 ## What is an Olm?
