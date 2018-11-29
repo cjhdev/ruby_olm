@@ -42,7 +42,7 @@ static VALUE initialize(int argc, VALUE *argv, VALUE self)
     return self;
 }
 
-static VALUE initialize_outbound(VALUE self, VALUE account, VALUE identity, VALUE one_time)
+static VALUE initialize_outbound(VALUE self, VALUE account, VALUE identity, VALUE one_time_key)
 {    
     size_t size;
     OlmSession *this;
@@ -61,14 +61,14 @@ static VALUE initialize_outbound(VALUE self, VALUE account, VALUE identity, VALU
     
         rb_raise(rb_eTypeError, "identity must be kind of String");
     }
-    if(rb_obj_is_kind_of(one_time, rb_eval_string("String")) != Qtrue){
+    if(rb_obj_is_kind_of(one_time_key, rb_eval_string("String")) != Qtrue){
     
-        rb_raise(rb_eTypeError, "one_time must be kind of String");
+        rb_raise(rb_eTypeError, "one_time_key must be kind of String");
     }
     
     if(olm_create_outbound_session(this, a,
             RSTRING_PTR(identity), RSTRING_LEN(identity),
-            RSTRING_PTR(one_time), RSTRING_LEN(one_time),
+            RSTRING_PTR(one_time_key), RSTRING_LEN(one_time_key),
             RSTRING_PTR(get_random(size)), size
             ) == olm_error()){
         raise_olm_error(olm_session_last_error(this));
@@ -91,6 +91,13 @@ static VALUE initialize_inbound(int argc, VALUE *argv, VALUE self)
     OlmAccount *a;
     Data_Get_Struct(account, OlmAccount, a);
     
+    if(rb_obj_is_kind_of(one_time_message, rb_eval_string("RubyOlm::PreKeyMessage")) != Qtrue){
+        
+        rb_raise(rb_eTypeError, "one_time_message must be kind of PreKeyMessage");
+    }
+    
+    one_time_message = rb_funcall(one_time_message, rb_intern("to_s"), 0);
+    
     if(identity == Qnil){
 
         if(olm_create_inbound_session(this, a,
@@ -112,7 +119,7 @@ static VALUE initialize_inbound(int argc, VALUE *argv, VALUE self)
     return self;
 }
 
-static VALUE has_received(VALUE self)
+static VALUE has_received_message(VALUE self)
 {
     OlmSession *this;
     Data_Get_Struct(self, OlmSession, this);
@@ -138,13 +145,22 @@ static VALUE get_session_id(VALUE self)
 
 static VALUE will_receive(int argc, VALUE *argv, VALUE self)
 {
-    VALUE one_time_message, identity = Qnil;
+    VALUE one_time_message, identity;
     size_t result;
     OlmSession *this;
     Data_Get_Struct(self, OlmSession, this);
-    
+
+    identity = Qnil;
+
     (void)rb_scan_args(argc, argv, "11", &one_time_message, &identity);
-    
+
+    if(rb_obj_is_kind_of(one_time_message, rb_eval_string("RubyOlm::PreKeyMessage")) != Qtrue){
+        
+        rb_raise(rb_eTypeError, "one_time_message must be kind of PreKeyMessage");
+    }
+
+    one_time_message = rb_funcall(one_time_message, rb_intern("to_s"), 0);
+
     if(identity == Qnil){
     
         result = olm_matches_inbound_session(this, 
@@ -170,16 +186,16 @@ static VALUE will_receive(int argc, VALUE *argv, VALUE self)
 static VALUE message_type(VALUE self)
 {
     OlmSession *this;
-    VALUE retval = Qnil;
+    VALUE retval;
     Data_Get_Struct(self, OlmSession, this);
     
     if(olm_encrypt_message_type(this) == OLM_MESSAGE_TYPE_PRE_KEY){
         
-        retval = rb_eval_string("PreKeyMessage");
+        retval = rb_eval_string("RubyOlm::PreKeyMessage");
     }
     else if(olm_encrypt_message_type(this) == OLM_MESSAGE_TYPE_MESSAGE){
         
-        retval = rb_eval_string("Message");
+        retval = rb_eval_string("RubyOlm::Message");
     }
     else{
         
@@ -194,7 +210,7 @@ static VALUE encrypt(VALUE self, VALUE plain)
     size_t cipher_size, random_size;
     void *ptr;
     OlmSession *this;
-    VALUE retval;
+    VALUE retval, type;
     Data_Get_Struct(self, OlmSession, this);
     
     cipher_size = olm_encrypt_message_length(this, RSTRING_LEN(plain));
@@ -205,14 +221,17 @@ static VALUE encrypt(VALUE self, VALUE plain)
         rb_raise(rb_eNoMemError, "%s()", __FUNCTION__);
     }
     
+    type = message_type(self);
+    
     if(olm_encrypt(this, RSTRING_PTR(plain), RSTRING_LEN(plain),
             RSTRING_PTR(get_random(random_size)), random_size,
             ptr, cipher_size
             ) == olm_error()){
+        free(ptr);
         raise_olm_error(olm_session_last_error(this));
     }
     
-    retval = rb_str_new(ptr, cipher_size);
+    retval = rb_funcall(type, rb_intern("new"), 1, rb_str_new(ptr, cipher_size));
     
     free(ptr);
     
@@ -221,26 +240,49 @@ static VALUE encrypt(VALUE self, VALUE plain)
 
 static VALUE decrypt(VALUE self, VALUE cipher)
 {
-    size_t plain_size, plain_max;
+    size_t plain_size, plain_max, type;
     void *ptr;
     OlmSession *this;
-    VALUE retval;
+    VALUE retval, data;
     Data_Get_Struct(self, OlmSession, this);
     
-    plain_max = olm_decrypt_max_plaintext_length(this, olm_encrypt_message_type(this), RSTRING_PTR(dup_string(cipher)), RSTRING_LEN(cipher));
+    if(rb_obj_is_kind_of(cipher, rb_eval_string("RubyOlm::Message")) == Qtrue){
+        
+        type = OLM_MESSAGE_TYPE_MESSAGE;
+    }
+    else if(rb_obj_is_kind_of(cipher, rb_eval_string("RubyOlm::PreKeyMessage")) == Qtrue){
+        
+        type = OLM_MESSAGE_TYPE_PRE_KEY;
+    }
+    else{
+        
+        rb_raise(rb_eTypeError, "cipher must be kind of Message or PreKeyMessage");
+    }
     
+    data = rb_funcall(cipher, rb_intern("to_s"), 0);
+    
+    if((plain_max = olm_decrypt_max_plaintext_length(this, type, RSTRING_PTR(dup_string(data)), RSTRING_LEN(data))) == olm_error()){
+        
+        raise_olm_error(olm_session_last_error(this));
+    } 
+    
+    /* size of output will be less than size of input */
     if((ptr = malloc(plain_max)) == NULL){
         
         rb_raise(rb_eNoMemError, "%s()", __FUNCTION__);
     }
     
-    plain_size = olm_decrypt(this, 
-            olm_encrypt_message_type(this), 
-            RSTRING_PTR(dup_string(cipher)), RSTRING_LEN(cipher),  
-            ptr, plain_max);
+    if((plain_size = olm_decrypt(this, 
+            type,
+            RSTRING_PTR(dup_string(data)), RSTRING_LEN(data),  
+            ptr, plain_max)) == olm_error())
+    {
+        free(ptr);
+        raise_olm_error(olm_session_last_error(this));
+    }
     
     retval = rb_str_new(ptr, plain_size);
-
+    
     free(ptr);
     
     return retval;
@@ -267,6 +309,7 @@ static VALUE to_pickle(int argc, VALUE *argv, VALUE self)
     
     if(olm_pickle_session(this, RSTRING_PTR(password), RSTRING_LEN(password), ptr, size) != size){
         
+        free(ptr);
         raise_olm_error(olm_session_last_error(this));
     } 
     
@@ -312,8 +355,9 @@ void session_init(void)
     rb_define_method(cSession, "initialize", initialize, -1);    
     rb_define_method(cSession, "id", get_session_id, 0);    
     rb_define_method(cSession, "last_error", last_error, 0);    
-    rb_define_method(cSession, "has_received?", has_received, 0);    
+    rb_define_method(cSession, "has_received_message", has_received_message, 0);    
     rb_define_method(cSession, "encrypt", encrypt, 1);    
     rb_define_method(cSession, "decrypt", decrypt, 1);
     rb_define_method(cSession, "to_pickle", to_pickle, -1);
+    rb_define_method(cSession, "will_receive?", will_receive, -1);
 }
