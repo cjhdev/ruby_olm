@@ -19,7 +19,7 @@ class TestExchange < Minitest::Test
     bob.gen_otk
 
     # Alice must have Bob's identity and one-time-key to make a session
-    alice_session = alice.outbound_session(bob.ik, bob.otk.first)
+    alice_session = alice.outbound_session(bob.ik['curve25519'], bob.otk['curve25519'].values.first)
 
     # Bob marks all one-time-keys as published
     bob.mark_otk
