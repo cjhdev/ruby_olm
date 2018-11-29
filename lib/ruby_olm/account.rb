@@ -2,6 +2,8 @@ module RubyOlm
 
   class Account
 
+    # @param pickle [String] pickled state
+    # @param password [String] password used to encrypt pickled state
     # @return [Account]
     def self.from_pickle(pickle, password="")
       Account.new(pickle: pickle, password: password)
