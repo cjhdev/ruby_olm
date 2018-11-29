@@ -113,6 +113,7 @@ static VALUE one_time_keys(VALUE self)
     
     if(olm_account_one_time_keys(this, ptr, size) != size){
         
+        free(ptr);
         raise_olm_error(olm_account_last_error(this));
     }
     
@@ -140,6 +141,7 @@ static VALUE sign(VALUE self, VALUE message)
     
     if(olm_account_sign(this, RSTRING_PTR(message), RSTRING_LEN(message), ptr, size) == olm_error()){
         
+        free(ptr);
         raise_olm_error(olm_account_last_error(this));
     }
     
@@ -219,6 +221,7 @@ static VALUE to_pickle(int argc, VALUE *argv, VALUE self)
     
     if(olm_pickle_account(this, RSTRING_PTR(password), RSTRING_LEN(password), ptr, size) != size){
         
+        free(ptr);
         raise_olm_error(olm_account_last_error(this));
     } 
     
