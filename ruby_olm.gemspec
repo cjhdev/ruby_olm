@@ -8,8 +8,10 @@ Gem::Specification.new do |s|
     s.summary = "Olm for Ruby"
     s.author  = "Cameron Harper"
     s.email = "contact@cjh.id.au"
+    s.homepage = "https://github.com/cjhdev/ruby_olm"
     s.files = Dir.glob("ext/**/*.{cpp,hh,c,h,rb}") + Dir.glob("lib/**/*.rb") + Dir.glob("test/**/*.rb") + ["rakefile"]
-    s.license = 'MIT'
+    s.extensions = ["ext/ruby_olm/ext_lib_olm/extconf.rb"]
+    s.license = 'Apache 2.0'
     s.test_files = Dir.glob("test/**/*.rb")
     s.add_development_dependency 'rake-compiler'
     s.add_development_dependency 'rake'
