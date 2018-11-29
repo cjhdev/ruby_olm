@@ -6,6 +6,7 @@
 
 void account_init(void);
 void session_init(void);
+void utility_init(void);
 
 static VALUE get_olm_version(VALUE self)
 {
@@ -31,6 +32,7 @@ void Init_ext_lib_olm(void)
 
     account_init();
     session_init();
+    utility_init();
 }
 
 void raise_olm_error(const char *error)
