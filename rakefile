@@ -16,7 +16,3 @@ Rake::TestTask.new do |t|
 end
 
 task :default => :test
-
-task :examples => :compile do
-  system "bundle exec ruby -Ilib examples/exchange.rb"
-end
