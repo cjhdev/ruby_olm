@@ -11,3 +11,4 @@ branches:
 script:
   - bundle install
   - bundle exec rake test
+  - gem build ruby_olm.gemspec && gem install ruby_olm-*.gem
