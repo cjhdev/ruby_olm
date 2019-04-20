@@ -1,2 +1,0 @@
-Dummy header files, so that we can generate the function list for cffi from the
-olm header files.
