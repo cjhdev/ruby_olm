@@ -1,13 +1,19 @@
 notifications:
   email: false
+dist: bionic
 language: Ruby
 rvm:
-  - 2.3.0
-  - 2.4.1
-  - 2.5.3
+  - 2.3.8
+  - 2.4.6
+  - 2.5.5
 branches:
   only:
     - master
+
+before_script:
+  - sudo apt update
+  - sudo apt install -y libolm-dev
+
 script:
   - bundle install
   - bundle exec rake test
